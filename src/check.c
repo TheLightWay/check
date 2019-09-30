@@ -26,6 +26,10 @@
 #include <stdarg.h>
 #include <math.h>
 
+#if defined(HAVE_FORK) && HAVE_FORK==1
+#include <unistd.h>
+#endif /* HAVE_FORK */
+
 #include "check.h"
 #include "check_error.h"
 #include "check_list.h"
@@ -601,8 +605,6 @@ clockid_t check_get_clockid()
 {
     static clockid_t clockid = -1;
 
-    if(clockid == -1)
-    {
 /*
  * Only check if we have librt available. Otherwise, the clockid
  * will be ignored anyway, as the clock_gettime() and
@@ -611,21 +613,20 @@ clockid_t check_get_clockid()
  * will result in an assert(0).
  */
 #ifdef HAVE_LIBRT
-        timer_t timerid;
+    timer_t timerid;
 
-        if(timer_create(CLOCK_MONOTONIC, NULL, &timerid) == 0)
-        {
-            timer_delete(timerid);
-            clockid = CLOCK_MONOTONIC;
-        }
-        else
-        {
-            clockid = CLOCK_REALTIME;
-        }
-#else
+    if(timer_create(CLOCK_MONOTONIC, NULL, &timerid) == 0)
+    {
+        timer_delete(timerid);
         clockid = CLOCK_MONOTONIC;
-#endif
     }
+    else
+    {
+        clockid = CLOCK_REALTIME;
+    }
+#else
+    clockid = CLOCK_MONOTONIC;
+#endif
 
     return clockid;
 }
